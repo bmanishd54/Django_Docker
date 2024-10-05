@@ -1,0 +1,119 @@
+{% load static %}
+{% load crispy_forms_tags %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<a href="{% url 'dashboard' %}" class="back-btn">Back to Dashboard</a>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="{% url 'view-attendance-home' %}">Attendance Dashboard</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url 'view-attendance-employee' %}">By Employee</a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url 'view-attendance-date' %}">By Date</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+
+<div class="container">
+    <div class="mt-4">
+
+        <form method="POST">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4"> Select Username And Duration </legend>
+                {{ form|crispy }}
+            </fieldset>
+
+            <div class="form-group">
+                <button class="btn btn-outline-info" type="submit">Submit</button>
+            </div>
+        </form>
+
+    </div>
+
+    {% if qs %}
+    <div class="table-responsive" style="margin-top: 5em;">
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Employee</th>
+                    <th scope="col">Present</th>
+                    <th scope="col">Time in</th>
+                    <th scope="col">Time out</th>
+                    <th scope="col">Hours</th>
+                    <th scope="col">Break Hours</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in qs %}
+                <tr>
+                    <td>{{ item.date }}</td>
+                    <td>{{ item.user.username }}</td>
+                    <td>{{ item.present|yesno:"P,A" }}</td>
+                    <td>{{ item.time_in|default:"-" }}</td>
+                    <td>{{ item.time_out|default:"-" }}</td>
+                    <td>{{ item.hours }}</td>
+                    <td>{{ item.break_hours }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card mb-4">
+        <img class="card-img-top" src="{% static 'recognition/img/attendance_graphs/hours_vs_date/1.png' %}" alt="Card image cap">
+        <div class="card-body">
+            <p class="card-text text-center">Number of hours worked each day.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+</div>
+
+
+
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<!-- Bootstrap Select CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.min.css">
+
+<!-- Bootstrap Select JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+
+<script>
+    // Initialize Bootstrap Select with live search
+    $(document).ready(function() {
+        $('.selectpicker').selectpicker();
+    });
+</script>
+
+</body>
+</html>

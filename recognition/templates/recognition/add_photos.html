@@ -1,0 +1,201 @@
+{% load static %}
+{% load crispy_forms_tags %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta tags and Bootstrap -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.min.css" crossorigin="anonymous">
+
+    <style>
+        body {
+            background: url('{% static "recognition/img/bg_image.png" %}') no-repeat center center fixed;
+            background-size: cover;
+        }
+        #video {
+            display: block;
+            margin-top: 20px;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            width: 100%; /* Ensure video takes full width */
+            height: auto; /* Keep aspect ratio */
+            transform: scaleX(-1); /* Flip horizontally */
+            -webkit-transform: scaleX(-1); /* Safari */
+        }
+        
+        .container {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 1em;
+            color: #fff;
+            border-radius: 10px;
+            margin: auto;
+            max-width: 450px; /* Make max-width more flexible for mobile */
+        }
+        #status-message {
+            margin-top: 20px; /* Provide spacing for status message */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="{% url 'dashboard' %}" id="back-link" class="text-left disabled" style="pointer-events: none;"><h5>Back</h5></a>
+
+    <form method="POST" id="capture-form">
+        {% csrf_token %}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Add Photos</legend>
+            <select name="username" class="selectpicker form-control" id="username-select" data-live-search="true">
+                <option value="" disabled selected>Select User</option>
+                {% for user in form.username.field.choices %}
+                    {% if user.0 %}  <!-- Exclude the empty choice -->
+                        <option value="{{ user.0 }}">{{ user.1 }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </fieldset>
+        
+        <div class="form-group row">
+            <div class="col">
+                <button class="btn btn-outline-success btn-block" type="button" id="save-employee">Refresh</button>
+            </div>
+            <div class="col">
+                <button class="btn btn-outline-info btn-block" type="button" id="start-capture" disabled>Capture Images</button>
+            </div>
+        </div>
+        
+        
+        <div id="status-message"></div> <!-- To display status messages -->
+    </form>
+
+    <video id="video" autoplay></video>
+    <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+</div>
+
+<!-- JavaScript for Bootstrap and webcam functionality -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js" crossorigin="anonymous"></script>
+
+<script>
+    const usernameSelect = document.getElementById('username-select');
+    const captureButton = document.getElementById('start-capture');
+    
+    usernameSelect.addEventListener('change', function() {
+        captureButton.disabled = !usernameSelect.value; // Enable/disable button based on selection
+    });
+
+    document.getElementById('start-capture').addEventListener('click', function() {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const statusMessage = document.getElementById('status-message');
+        const form = document.getElementById('capture-form');
+        
+        const usernameSelect = form.querySelector('select[name="username"]');
+        const selectedOption = usernameSelect.options[usernameSelect.selectedIndex];
+        const username = selectedOption.textContent.trim();
+
+        statusMessage.textContent = 'Capturing Images...';
+
+        const constraints = {
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: 'user'
+            }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function(stream) {
+                video.srcObject = stream;
+                video.play();
+
+                video.addEventListener('loadedmetadata', function() {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                });
+
+                let sampleNum = 0;
+                const maxSamples = 200;
+                const captureInterval = 300;
+                let uploadPromises = [];
+
+                function captureFrame() {
+                    if (sampleNum >= maxSamples) {
+                        video.srcObject.getTracks().forEach(track => track.stop());
+                        const backLink = document.getElementById('back-link');
+                        Promise.all(uploadPromises).then(() => {
+                            statusMessage.textContent = 'Images Captured Successfully';
+                            backLink.classList.remove('disabled');
+                            backLink.style.pointerEvents = 'auto'; // Make it clickable
+                        });
+                        return;
+                    }
+
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageDataURL = canvas.toDataURL('image/jpeg');
+
+                    const uploadPromise = fetch('/create-dataset/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': form.querySelector('[name="csrfmiddlewaretoken"]').value
+                        },
+                        body: `username=${encodeURIComponent(username)}&image=${encodeURIComponent(imageDataURL)}&sampleNum=${sampleNum}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            sampleNum++;
+                        } else {
+                            console.error('Error capturing image:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error sending image data:', error);
+                    });
+
+                    uploadPromises.push(uploadPromise);
+                    setTimeout(captureFrame, captureInterval);
+                }
+                
+                captureFrame();
+            })
+            .catch(function(error) {
+                console.error('Error accessing webcam: ', error);
+                statusMessage.textContent = 'Error accessing webcam.';
+            });
+    });
+
+    document.getElementById('save-employee').addEventListener('click', function() {
+        const statusMessage = document.getElementById('status-message');
+        statusMessage.textContent = 'Updating employees list...';
+
+        fetch('/save-employees/', {
+            method: 'GET',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                statusMessage.textContent = data.message;  // Show success message
+                setTimeout(function() {
+                    location.reload();
+                }, 2000);            
+            } else {
+                statusMessage.textContent = 'Error: ' + data.message;  // Show error message
+            }
+        })
+        .catch(error => {
+            statusMessage.textContent = 'An error occurred: ' + error.message;
+        });
+    });
+</script>
+
+</body>
+</html>
+

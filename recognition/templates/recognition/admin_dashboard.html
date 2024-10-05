@@ -1,0 +1,117 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" crossorigin="anonymous">
+
+    <style>
+        body {
+            background: url('{% static "recognition/img/bg_image.png"%}') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        .icon-container {
+            text-align: center;
+            margin-bottom: 1em;
+        }
+
+        .icon-container img {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .icon-container img:hover {
+            box-shadow: 2px 2px 21px 0px rgba(0, 3, 0, 0.91);
+            border: 2px solid #fff;
+        }
+
+        .icon-name {
+            margin-top: 0.5em;
+        }
+
+        .container {
+            background: rgba(0,0,0,0.6);
+            margin-top: 0em;
+            margin-bottom: 5em;
+            padding-top: 1em;
+            padding-bottom: 3em;
+            color: #fff;
+            border-radius: 10px;
+            box-shadow: 2px 2px 15px 0px rgba(0, 3, 0, 0.7);
+        }
+
+        #processingMessage {
+            display: none;
+            text-align: center;
+            margin-top: 1em;
+            margin-left: 2em;
+            font-size: 1.2em;
+            color: #21cac5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12 text-right">
+                <a href="{% url 'logout' %}"><h5><i class="fa fa-user-circle" aria-hidden="true"></i> Logout</h5></a>
+            </div>
+            <div class="col-12">
+                <h2 class="text-center">Welcome, admin.</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 icon-container">
+                <a href="{% url 'list_employees' %}"><img src="{% static 'recognition/img/register.png' %}" class="img-responsive" /></a>
+                <h4 class="icon-name">View All Employees</h4>
+            </div>
+            <div class="col-md-6 icon-container">
+                <a href="{% url 'add-photos' %}"><img src="{% static 'recognition/img/addphotos.png' %}" class="img-responsive" /></a>
+                <h4 class="icon-name">Add Photos</h4>
+            </div>
+            <div class="col-md-6 icon-container">
+                <a href="{% url 'train' %}" id="trainButton" onclick="showProcessingMessage()"><img src="{% static 'recognition/img/train.jpeg' %}" class="img-responsive" /></a>
+                <h4 class="icon-name">Train</h4>
+            </div>
+            <div class="col-md-6 icon-container">
+                <a href="{% url 'view-attendance-home' %}"><img src="{% static 'recognition/img/reports.png' %}" class="img-responsive" /></a>
+                <h4 class="icon-name">View Attendance Reports</h4>
+            </div>
+        </div>
+
+        <!-- Processing message -->
+        <div id="processingMessage">Processing...</div>
+
+        {% if messages %}
+            <div class="row">
+                <div class="col-12">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Optional JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" crossorigin="anonymous"></script>
+
+    <!-- JavaScript to show Processing message -->
+    <script>
+        function showProcessingMessage() {
+            document.getElementById('processingMessage').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
