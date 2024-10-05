@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Now you can install dlib via pip
-RUN pip install dlib
+RUN pip install cmake dlib
 
 ENV PYTHONUNBUFFERED=1
 
